@@ -1,0 +1,29 @@
+{
+  "name": "@zacharilius/pirates-game",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "rsbuild dev --open",
+    "build": "rsbuild build",
+    "lint": "npx eslint --ignore-pattern 'dist/**' .",
+    "preview": "rsbuild preview",
+    "test": "jest",
+    "verify": "npm run lint && npm run test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.19.0",
+    "@rsbuild/core": "^1.1.8",
+    "@types/jest": "^29.5.14",
+    "eslint": "^9.19.0",
+    "jest": "^29.7.0",
+    "jest-canvas-mock": "^2.5.2",
+    "jest-environment-jsdom": "^29.7.0",
+    "phaser": "^3.88.2",
+    "phaser3spectorjs": "^0.0.8",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.23.0"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}

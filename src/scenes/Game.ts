@@ -1,4 +1,5 @@
 import { Scene } from 'phaser';
+import { Player } from '../gameObjects/Player';
 
 // Each tile in the background tile sprite is 64 width and height.
 const BACKGROUND_DIMENSION_PIXELS = 64;
@@ -30,7 +31,7 @@ const tiles = [
 ]
 
 export class Game extends Scene {
-    private player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody | undefined;
+    private player: Player | undefined;
     private mainCamera: Phaser.Cameras.Scene2D.Camera | undefined;
     private cursors: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
     private playerSpeed = 200;
@@ -47,23 +48,18 @@ export class Game extends Scene {
     
         // Resize the physics world bounds
         this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
-    
-        // You'll likely also want to set the camera bounds to match
-        this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
 
         // Background
         this.setupBackground();
 
         // Player
-        this.player = this.physics.add.sprite(0, 0, 'pirateShip');
-        this.player.scale = .5;
-        this.player.setCollideWorldBounds(true);
-        this.mainCamera = this.cameras.main;
+        this.player = new Player(this, 0, 0);
 
         // Collisions
         this.physics.add.collider(this.player, this.backgroundTileGroup as Phaser.Physics.Arcade.StaticGroup);
 
         // Camera setup
+        this.mainCamera = this.cameras.main;
         this.mainCamera.startFollow(this.player);
         this.mainCamera.setBounds(0, 0, this.physics.world.bounds.width, this.physics.world.bounds.height);
         this.mainCamera.setZoom(2);

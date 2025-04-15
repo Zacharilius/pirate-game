@@ -31,8 +31,8 @@ export class Preloader extends Scene {
             { frameWidth: 64, frameHeight: 64 }
         );
 
-        // Pirate ship
-        this.load.image('pirateShip', 'pirateShip.png');
+        // Load the assets
+        this.load.atlasXML('shipSheet', 'shipsMiscellaneous_sheet.png', 'shipsMiscellaneous_sheet.xml');
     }
 
     create () {

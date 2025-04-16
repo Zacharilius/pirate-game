@@ -1,5 +1,6 @@
 import { Scene } from 'phaser';
 import { Player } from '../gameObjects/Player';
+import { CannonBall } from '../gameObjects/CannonBall';
 
 // Each tile in the background tile sprite is 64 width and height.
 const BACKGROUND_DIMENSION_PIXELS = 64;
@@ -36,6 +37,9 @@ export class Game extends Scene {
     private cursors: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
     private playerSpeed = 200;
 
+    private cannonBalls: Phaser.Physics.Arcade.Group | undefined;
+
+
     private backgroundTileGroup: Phaser.Physics.Arcade.StaticGroup | undefined;
 
     constructor () {
@@ -66,9 +70,25 @@ export class Game extends Scene {
 
         // Cursors
         this.cursors = this.input.keyboard?.createCursorKeys();
+
+        // Cannonball
+        this.cannonBalls = this.physics.add.group();
+        this.input.keyboard?.on('keydown', (event) => {
+            if (event.code === 'Space') {
+                this.shoot();
+            }
+        });
     }
 
-    update() {
+   private shoot() {
+        const cannonBall = new CannonBall(this, this.player?.x as number, this.player?.y as number);
+        this.cannonBalls?.add(cannonBall);
+        // When a sprite is added to a group, it sets the velocity to 0. So
+        // initalize after added to the group.
+        cannonBall.init();
+    }
+
+    update( ) {
         if (!this.player || !this.cursors) {
             return;
         }
@@ -94,6 +114,11 @@ export class Game extends Scene {
         if (this.player.body.velocity.x !== 0 && this.player.body.velocity.y !== 0) {
             this.player.body.velocity.normalize().scale(this.playerSpeed);
         }
+
+        this.cannonBalls?.getChildren().forEach((cannonBallGameObject: Phaser.GameObjects.GameObject) => {
+            const cannonBall = cannonBallGameObject as CannonBall;
+            cannonBall.update();
+        });
     }
 
     private setupBackground () {

@@ -1,5 +1,4 @@
 import { Scene } from 'phaser';
-import { HorseSprites } from '../gameObjects/horseSprites';
 
 export class Preloader extends Scene {
     constructor () {

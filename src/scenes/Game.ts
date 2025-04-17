@@ -1,6 +1,7 @@
 import { Scene } from 'phaser';
 import { Player } from '../gameObjects/Player';
 import { CannonBall } from '../gameObjects/CannonBall';
+import { EnglishShip } from '../gameObjects/EnglishShip';
 
 // Each tile in the background tile sprite is 64 width and height.
 const BACKGROUND_DIMENSION_PIXELS = 64;
@@ -35,6 +36,7 @@ const tiles = [
 
 export class Game extends Scene {
     private player: Player | undefined;
+    private enemies: Phaser.Physics.Arcade.Group | undefined;
     private mainCamera: Phaser.Cameras.Scene2D.Camera | undefined;
     private cursors: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
 
@@ -59,9 +61,13 @@ export class Game extends Scene {
 
         // Player
         this.player = new Player(this, 25, 25);
-
-        // Collisions
         this.physics.add.collider(this.player, this.backgroundTileGroup as Phaser.Physics.Arcade.StaticGroup);
+
+        // Enemies
+        this.enemies = this.physics.add.group();
+        this.physics.add.collider(this.enemies, this.backgroundTileGroup as Phaser.Physics.Arcade.StaticGroup);
+        const enemyShip = new EnglishShip(this, 250, 250);
+        this.enemies?.add(enemyShip);
 
         // Camera setup
         this.mainCamera = this.cameras.main;
@@ -79,7 +85,27 @@ export class Game extends Scene {
                 this.shoot();
             }
         });
+
+        this.physics.add.collider(this.cannonBalls, this.enemies, this.handleEnemyCollision, null, this);
     }
+
+    private handleEnemyCollision(cannonBall: CannonBall, enemy: EnglishShip) {
+        // Do not move when hit.
+        enemy.setVelocity(0);
+        const enemyX = enemy.x;
+        const enemyY = enemy.y;
+        enemy.takeDamage(cannonBall.getDamage());
+        if (enemy.getHealth() <= 0) {
+            // Show fire for 1 second.
+            const tempSprite = this.add.sprite(enemyX, enemyY,  'shipSheet', 'explosion3.png');
+            this.time.delayedCall(1000, () => {
+                tempSprite.destroy();
+            });
+        } else {
+            enemy.setTint(0xff0000);
+        }
+        cannonBall.setInactive();
+    };
 
    private shoot() {
         let cannonBall: CannonBall = this.cannonBalls?.getFirst();

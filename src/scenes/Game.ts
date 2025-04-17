@@ -1,5 +1,5 @@
 import { Scene } from 'phaser';
-import { Player } from '../gameObjects/Player';
+import { CANNON_RADIAN_OFFSET, Player } from '../gameObjects/Player';
 import { CannonBall } from '../gameObjects/CannonBall';
 import { CrossShip } from '../gameObjects/CrossShip';
 
@@ -81,8 +81,11 @@ export class Game extends Scene {
         // Cannonball
         this.cannonBalls = this.physics.add.group();
         this.input.keyboard?.on('keydown', (event: KeyboardEvent) => {
-            if (event.code === 'Space') {
-                this.shoot();
+            if (event.code === "KeyA") {
+                this.shootLeft();
+            }
+            if (event.code === "KeyD") {
+                this.shootRight();
             }
         });
 
@@ -115,19 +118,31 @@ export class Game extends Scene {
         cannonBall.setInactive();
     };
 
-   private shoot() {
+    private shootLeft() {
+        const rotationOffset = CANNON_RADIAN_OFFSET;
+        const rotation = this.player?.rotation as number;
+        this.shoot(rotation + rotationOffset);
+    }
+
+    private shootRight() {
+        const rotationOffset = -CANNON_RADIAN_OFFSET + Math.PI;
+        const rotation = this.player?.rotation as number
+        this.shoot(rotation + rotationOffset);
+    }
+
+   private shoot(rotation: number) {
         let cannonBall: CannonBall = this.cannonBalls?.getFirst();
         if (cannonBall) {
             // Reuse the cannonball if available.
             cannonBall.setActive(true).setVisible(true);
             cannonBall.setPosition(this.player?.x as number, this.player?.y as number);
-            cannonBall.init(this.player?.rotation as number);
+            cannonBall.init(rotation);
         } else {
-            cannonBall = new CannonBall(this, this.player?.x as number, this.player?.y as number );
+            cannonBall = new CannonBall(this, this.player?.x as number, this.player?.y as number);
             this.cannonBalls?.add(cannonBall);
             // When a sprite is added to a group, it sets the velocity to 0. So
             // initalize after added to the group.
-            cannonBall.init(this.player?.rotation as number);
+            cannonBall.init(rotation);
         }
     }
 

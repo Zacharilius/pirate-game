@@ -1,8 +1,9 @@
 import Phaser from "phaser";
 
-export class Player extends Phaser.Physics.Arcade.Sprite {
+export const CANNON_RADIAN_OFFSET = 0.7;
 
-    private speed = 200;
+export class Player extends Phaser.Physics.Arcade.Sprite {
+    private speed = 100;
 
     constructor(scene: Phaser.Scene, x: number, y: number) {
         super(scene, x, y, 'shipSheet', 'ship (2).png');
@@ -36,8 +37,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
 
         // When moving diagonally, reduce speed because traveling both x & y.
-        if (this.body.velocity.x !== 0 && this.body.velocity.y !== 0) {
-            this.body.velocity.normalize().scale(this.speed);
+        if (this.body?.velocity.x !== 0 && this.body?.velocity.y !== 0) {
+            this.body?.velocity.normalize().scale(this.speed);
         }
     }
 

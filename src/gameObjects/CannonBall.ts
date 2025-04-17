@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 
 export class CannonBall extends Phaser.Physics.Arcade.Sprite {
-    private cannonBallSpeed = 300;
+    private cannonBallSpeed = 200;
     private cannonBallRange = 150;
     private damage = 1;
 

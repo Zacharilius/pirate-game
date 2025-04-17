@@ -1,7 +1,7 @@
 import { Scene } from 'phaser';
 import { Player } from '../gameObjects/Player';
 import { CannonBall } from '../gameObjects/CannonBall';
-import { EnglishShip } from '../gameObjects/EnglishShip';
+import { CrossShip } from '../gameObjects/CrossShip';
 
 // Each tile in the background tile sprite is 64 width and height.
 const BACKGROUND_DIMENSION_PIXELS = 64;
@@ -66,8 +66,8 @@ export class Game extends Scene {
         // Enemies
         this.enemies = this.physics.add.group();
         this.physics.add.collider(this.enemies, this.backgroundTileGroup as Phaser.Physics.Arcade.StaticGroup);
-        const enemyShip = new EnglishShip(this, 250, 250);
-        this.enemies?.add(enemyShip);
+        const enemyCrossShip = new CrossShip(this, 250, 250);
+        this.enemies?.add(enemyCrossShip);
 
         // Camera setup
         this.mainCamera = this.cameras.main;
@@ -86,10 +86,10 @@ export class Game extends Scene {
             }
         });
 
-        this.physics.add.collider(this.cannonBalls, this.enemies, this.handleEnemyCollision, null, this);
+        this.physics.add.collider(this.cannonBalls, this.enemies, this.handleEnemyHit, null, this);
     }
 
-    private handleEnemyCollision(cannonBall: CannonBall, enemy: EnglishShip) {
+    private handleEnemyHit(cannonBall: CannonBall, enemy: CrossShip) {
         // Do not move when hit.
         enemy.setVelocity(0);
         const enemyX = enemy.x;
@@ -100,9 +100,17 @@ export class Game extends Scene {
             const tempSprite = this.add.sprite(enemyX, enemyY,  'shipSheet', 'explosion3.png');
             this.time.delayedCall(1000, () => {
                 tempSprite.destroy();
+                const firstEnemy: CrossShip = this.enemies?.getFirst();
+                firstEnemy?.revive();
             });
         } else {
             enemy.setTint(0xff0000);
+            this.time.delayedCall(1000, () => {
+                if (enemy.getHealth() > 0) {
+                    enemy.setTint();
+                }
+            });
+
         }
         cannonBall.setInactive();
     };

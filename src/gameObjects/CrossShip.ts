@@ -1,7 +1,9 @@
 import Phaser from "phaser";
 
-export class EnglishShip extends Phaser.Physics.Arcade.Sprite {
-    private health = 3;
+const HEALTH = 3;
+
+export class CrossShip extends Phaser.Physics.Arcade.Sprite {
+    private health = HEALTH;
 
     private speed = 200;
 
@@ -49,10 +51,28 @@ export class EnglishShip extends Phaser.Physics.Arcade.Sprite {
     public takeDamage(damage: number) {
         this.health -= damage;
         if (this.health <= 0) {
-            this.setActive(false).setVisible(false);
-            this.setVelocity(0); // Stop its movement
-            this.setPosition(-100, -100); // Move it off-screen for reuse
+            this.die();
         }
+    }
+
+    public resetHealth() {
+        this.health = HEALTH;
+    }
+
+    public die() {
+        this.setActive(false)
+        this.setVisible(false);
+        this.setVelocity(0); // Stop its movement
+        this.setPosition(-100, -100); // Move it off-screen for reuse
+
+    }
+
+    public revive() {
+        this.setActive(true);
+        this.setVisible(true);
+        this.setPosition(250, 250);
+        this.resetHealth();
+        this.setTint();
     }
 
     // Makes the physics body match the sprite image.

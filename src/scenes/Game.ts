@@ -29,13 +29,14 @@ const tiles = [
     [-1, -1, -1, -1, -1, 16, 17, 17, 17, 18, -1, -1, -1, -1, -1, -1, -1, -1],
     [-1, -1, -1, -1, -1, 32, 33, 33, 33, 34, -1, -1, -1, -1, -1, -1, -1, -1],
     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
 ]
 
 export class Game extends Scene {
     private player: Player | undefined;
     private mainCamera: Phaser.Cameras.Scene2D.Camera | undefined;
     private cursors: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
-    private playerSpeed = 200;
 
     private cannonBalls: Phaser.Physics.Arcade.Group | undefined;
 
@@ -57,7 +58,7 @@ export class Game extends Scene {
         this.setupBackground();
 
         // Player
-        this.player = new Player(this, 0, 0);
+        this.player = new Player(this, 25, 25);
 
         // Collisions
         this.physics.add.collider(this.player, this.backgroundTileGroup as Phaser.Physics.Arcade.StaticGroup);
@@ -81,39 +82,27 @@ export class Game extends Scene {
     }
 
    private shoot() {
-        const cannonBall = new CannonBall(this, this.player?.x as number, this.player?.y as number);
-        this.cannonBalls?.add(cannonBall);
-        // When a sprite is added to a group, it sets the velocity to 0. So
-        // initalize after added to the group.
-        cannonBall.init();
+        let cannonBall: CannonBall = this.cannonBalls?.getFirst();
+        if (cannonBall) {
+            // Reuse the cannonball if available.
+            cannonBall.setActive(true).setVisible(true);
+            cannonBall.setPosition(this.player?.x as number, this.player?.y as number);
+            cannonBall.init(this.player?.rotation as number);
+        } else {
+            cannonBall = new CannonBall(this, this.player?.x as number, this.player?.y as number );
+            this.cannonBalls?.add(cannonBall);
+            // When a sprite is added to a group, it sets the velocity to 0. So
+            // initalize after added to the group.
+            cannonBall.init(this.player?.rotation as number);
+        }
     }
 
     update( ) {
         if (!this.player || !this.cursors) {
             return;
         }
-        this.player.setVelocity(0);
-    
-        if (this.cursors.left.isDown) {
-            this.player.setVelocityX(-this.playerSpeed);
-            this.player.angle = 90;
-        } else if (this.cursors.right.isDown) {
-            this.player.setVelocityX(this.playerSpeed);
-            this.player.angle = 270;
-        }
-    
-        if (this.cursors.up.isDown) {
-            this.player.setVelocityY(-this.playerSpeed);
-            this.player.angle = 180;
-        } else if (this.cursors.down.isDown) {
-            this.player.setVelocityY(this.playerSpeed);
-            this.player.angle = 0;
-        }
 
-        // When moving diagonally, reduce speed because traveling both x & y.
-        if (this.player.body.velocity.x !== 0 && this.player.body.velocity.y !== 0) {
-            this.player.body.velocity.normalize().scale(this.playerSpeed);
-        }
+        this.player.update(this.cursors);
 
         this.cannonBalls?.getChildren().forEach((cannonBallGameObject: Phaser.GameObjects.GameObject) => {
             const cannonBall = cannonBallGameObject as CannonBall;

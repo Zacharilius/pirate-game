@@ -1,10 +1,8 @@
 import Phaser from "phaser";
 
 export class CannonBall extends Phaser.Physics.Arcade.Sprite {
-    private cannonBallSpeed = 200;
-    private cannonBallFireRate = 1000; // milliseconds
-    private cannonBallDamage = 10;
-    private cannonBallRange = 100; // pixels
+    private cannonBallSpeed = 300;
+    private cannonBallRange = 150;
 
     constructor(scene: Phaser.Scene, x: number, y: number) {
         super(scene, x, y, 'shipSheet', 'cannonBall.png');
@@ -13,11 +11,9 @@ export class CannonBall extends Phaser.Physics.Arcade.Sprite {
         this.setCollideWorldBounds(false);
 
     }
-    public init() {
-        const speed = 300; // Adjust bullet speed
-        const angle = 0; // Adjust for shooting direction (e.g., player's facing)
-        this.setVelocityX(Math.cos(angle) * speed);
-        this.setVelocityY(Math.sin(angle) * speed);
+    public init(angle: number) {
+        this.setVelocityX(Math.cos(angle) * this.cannonBallSpeed);
+        this.setVelocityY(Math.sin(angle) * this.cannonBallSpeed);
         this.setData('startX', this.x);
         this.setData('startY', this.y);
     }

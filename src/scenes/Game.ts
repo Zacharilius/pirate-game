@@ -80,13 +80,13 @@ export class Game extends Scene {
 
         // Cannonball
         this.cannonBalls = this.physics.add.group();
-        this.input.keyboard?.on('keydown', (event) => {
+        this.input.keyboard?.on('keydown', (event: KeyboardEvent) => {
             if (event.code === 'Space') {
                 this.shoot();
             }
         });
 
-        this.physics.add.collider(this.cannonBalls, this.enemies, this.handleEnemyHit, null, this);
+        this.physics.add.collider(this.cannonBalls, this.enemies, this.handleEnemyHit as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback, undefined, this);
     }
 
     private handleEnemyHit(cannonBall: CannonBall, enemy: CrossShip) {

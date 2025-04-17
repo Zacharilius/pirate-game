@@ -39,8 +39,8 @@ export class CrossShip extends Phaser.Physics.Arcade.Sprite {
         }
 
         // When moving diagonally, reduce speed because traveling both x & y.
-        if (this.body.velocity.x !== 0 && this.body.velocity.y !== 0) {
-            this.body.velocity.normalize().scale(this.speed);
+        if (this.body?.velocity.x !== 0 && this.body?.velocity.y !== 0) {
+            this.body?.velocity.normalize().scale(this.speed);
         }
     }
 

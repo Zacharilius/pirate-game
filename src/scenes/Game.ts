@@ -1,23 +1,12 @@
 import { Scene } from 'phaser';
-import { CANNON_RADIAN_OFFSET, Player } from '../gameObjects/Player';
+import { CANNON_RADIAN_OFFSET, Player } from '../gameObjects/ships/Player';
 import { CannonBall } from '../gameObjects/CannonBall';
-import { CrossShip } from '../gameObjects/CrossShip';
+import { CrossShip } from '../gameObjects/ships/CrossShip';
 
 // Each tile in the background tile sprite is 64 width and height.
 const BACKGROUND_DIMENSION_PIXELS = 64;
 
-// -1 Not a tile... water
-// 0 - Sand top, left
-// 1 - Sand top
-// 2 - Sand top, right
-
-// 16 Sand Middle, left middle
-// 17 Sand Middle, middle middle
-// 18 Sand Middle, right middle
-
-// 32 Sand Bottom, left
-// 33 Sand Bottom, middle
-// 34 Sand Bottom, right
+// -1 is no tile (water). The other numbers correspond to indexes in the tilesheet
 const tiles = [
     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
@@ -41,10 +30,14 @@ export class Game extends Scene {
     private player: Player | undefined;
     private enemies: Phaser.Physics.Arcade.Group | undefined;
     private mainCamera: Phaser.Cameras.Scene2D.Camera | undefined;
+
     private cursors: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
+    private inputA: Phaser.Input.Keyboard.Key | undefined;
+    private inputD: Phaser.Input.Keyboard.Key | undefined;
 
     private cannonBalls: Phaser.Physics.Arcade.Group | undefined;
-
+    private lastCannonBallTime: number = 0;
+    private cannonBallDelay: number = 1000;
 
     private backgroundTileGroup: Phaser.Physics.Arcade.StaticGroup | undefined;
 
@@ -81,23 +74,16 @@ export class Game extends Scene {
 
         // Cursors
         this.cursors = this.input.keyboard?.createCursorKeys();
+        this.inputA = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+        this.inputD = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.D);
 
         // Cannonball
         this.cannonBalls = this.physics.add.group();
-        this.input.keyboard?.on('keydown', (event: KeyboardEvent) => {
-            if (event.code === "KeyA") {
-                this.shootLeft();
-            }
-            if (event.code === "KeyD") {
-                this.shootRight();
-            }
-        });
-
         this.physics.add.collider(this.cannonBalls, this.enemies, this.handleEnemyHit as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback, undefined, this);
     }
 
     private handleEnemyHit(cannonBall: CannonBall, enemy: CrossShip) {
-        // Do not move when hit.
+        // takeDamage moves the enemy off screen so store original hit position to place the explosion correctly.
         const enemyX = enemy.x;
         const enemyY = enemy.y;
         enemy.takeDamage(cannonBall.getDamage());
@@ -121,13 +107,38 @@ export class Game extends Scene {
         cannonBall.setInactive();
     };
 
-    private shootLeft() {
+    update(time: number) {
+        if (time > this.lastCannonBallTime + this.cannonBallDelay) {
+            if (this.inputA?.isDown) {
+                this.shootPort();
+                this.lastCannonBallTime = time;
+            } else if (this.inputD?.isDown) {
+                this.shootStarboard();
+                this.lastCannonBallTime = time;
+            }
+        }
+
+        this.player?.update(this.cursors as Phaser.Types.Input.Keyboard.CursorKeys);
+
+        this.enemies?.getChildren().forEach((crossShipGameObject: Phaser.GameObjects.GameObject) => {
+            const crossShip = crossShipGameObject as CrossShip;
+            crossShip.update();
+        });
+
+        this.cannonBalls?.getChildren().forEach((cannonBallGameObject: Phaser.GameObjects.GameObject) => {
+            const cannonBall = cannonBallGameObject as CannonBall;
+            cannonBall.update();
+        });
+    }
+
+
+    private shootPort() {
         const rotationOffset = CANNON_RADIAN_OFFSET;
         const rotation = this.player?.rotation as number;
         this.shoot(rotation + rotationOffset);
     }
 
-    private shootRight() {
+    private shootStarboard() {
         const rotationOffset = -CANNON_RADIAN_OFFSET + Math.PI;
         const rotation = this.player?.rotation as number
         this.shoot(rotation + rotationOffset);
@@ -147,24 +158,6 @@ export class Game extends Scene {
             // initalize after added to the group.
             cannonBall.init(rotation);
         }
-    }
-
-    update() {
-        if (!this.player || !this.cursors) {
-            return;
-        }
-
-        this.player.update(this.cursors);
-
-        this.enemies?.getChildren().forEach((crossShipGameObject: Phaser.GameObjects.GameObject) => {
-            const crossShip = crossShipGameObject as CrossShip;
-            crossShip.update();
-        });
-
-        this.cannonBalls?.getChildren().forEach((cannonBallGameObject: Phaser.GameObjects.GameObject) => {
-            const cannonBall = cannonBallGameObject as CannonBall;
-            cannonBall.update();
-        });
     }
 
     private setupBackground () {

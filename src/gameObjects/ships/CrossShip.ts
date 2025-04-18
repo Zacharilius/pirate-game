@@ -1,21 +1,22 @@
 import Phaser from "phaser";
+import { BaseShip } from "./BaseShip";
 
 const HEALTH = 3;
 
 const PATH = [
-    { x: 200, y: 75 },
-    { x: 200, y: 400 },
-    { x: 600, y: 400 },
-    { x: 600, y: 75 },
+    { x: 200, y: 75, angle: 90},
+    { x: 200, y: 400, angle: 0},
+    { x: 600, y: 400, angle: 270},
+    { x: 600, y: 75, angle: 180},
 ];
 
-export class CrossShip extends Phaser.Physics.Arcade.Sprite {
+export class CrossShip extends BaseShip {
     private health = HEALTH;
-    private speed = 50;
+    protected speed = 50;
     private currentPathIndex: number = 0;
 
     constructor(scene: Phaser.Scene) {
-        super(scene, PATH[0].x, PATH[0].y, 'shipSheet', 'ship (1).png');
+        super(scene, PATH[0].x, PATH[0].y, 'ship (1).png');
         this.randomizeCurrentPathIndex();
         const path = this.getCurrentPathTarget();
         this.setPosition(path.x, path.y);
@@ -38,6 +39,9 @@ export class CrossShip extends Phaser.Physics.Arcade.Sprite {
         } else {
             this.scene.physics.moveToObject(this, target, this.speed);
         }
+        this.setAngle(target.angle);
+
+        this.updateBoundingBox();
     }
 
     moveToNextPatrolPoint() {
@@ -76,16 +80,6 @@ export class CrossShip extends Phaser.Physics.Arcade.Sprite {
         this.setPosition(path.x, path.y);
         this.resetHealth();
         this.setTint();
-    }
-
-    // Makes the physics body match the sprite image.
-    private setBoundingBoxForHorizontal() {
-        this.setSize(100, 50);
-    }
-
-    // Makes the physics body match the sprite image.
-    private setBoundingBoxForVertical() {
-        this.setSize(50, 100);
     }
 
     private randomizeCurrentPathIndex = () => {

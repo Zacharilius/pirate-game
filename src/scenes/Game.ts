@@ -20,15 +20,18 @@ const BACKGROUND_DIMENSION_PIXELS = 64;
 // 34 Sand Bottom, right
 const tiles = [
     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
     [-1, -1, -1, -1,  0,  1,  2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
     [-1, -1, -1, -1, 16, 17, 18, -1, -1, -1, -1, -1, -1,  0,  1,  2, -1, -1],
     [-1, -1, -1, -1, 32, 33, 34, -1, -1, -1, -1, -1, -1, 16, 17, 18, -1, -1],
     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 32, 33, 34, -1, -1],
     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
-    [-1, -1, -1, -1, -1,  0,  1,  1,  1, 2, -1, -1, -1, -1, -1, -1, -1, -1],
-    [-1, -1, -1, -1, -1, 16, 17, 17, 17, 18, -1, -1, -1, -1, -1, -1, -1, -1],
-    [-1, -1, -1, -1, -1, 16, 17, 17, 17, 18, -1, -1, -1, -1, -1, -1, -1, -1],
-    [-1, -1, -1, -1, -1, 32, 33, 33, 33, 34, -1, -1, -1, -1, -1, -1, -1, -1],
+    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+    [-1, -1, -1, -1, -1,  5,  6,  7,  7,  8, -1, -1, -1, -1, -1, -1, -1, -1],
+    [-1, -1, -1, -1, -1, 21, 22, 23, 23, 24, -1, -1, -1, -1, -1, -1, -1, -1],
+    [-1, -1, -1, -1, -1, 37, 38, 39, 39, 40, -1, -1, -1, -1, -1, -1, -1, -1],
+    [-1, -1, -1, -1, -1, 37, 38, 39, 39, 40, -1, -1, -1, -1, -1, -1, -1, -1],
+    [-1, -1, -1, -1, -1, 53, 54, 55, 55, 56, -1, -1, -1, -1, -1, -1, -1, -1],
     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
@@ -66,7 +69,8 @@ export class Game extends Scene {
         // Enemies
         this.enemies = this.physics.add.group();
         this.physics.add.collider(this.enemies, this.backgroundTileGroup as Phaser.Physics.Arcade.StaticGroup);
-        const enemyCrossShip = new CrossShip(this, 250, 250);
+        this.physics.add.collider(this.enemies, this.player);
+        const enemyCrossShip = new CrossShip(this);
         this.enemies?.add(enemyCrossShip);
 
         // Camera setup
@@ -94,7 +98,6 @@ export class Game extends Scene {
 
     private handleEnemyHit(cannonBall: CannonBall, enemy: CrossShip) {
         // Do not move when hit.
-        enemy.setVelocity(0);
         const enemyX = enemy.x;
         const enemyY = enemy.y;
         enemy.takeDamage(cannonBall.getDamage());
@@ -146,12 +149,17 @@ export class Game extends Scene {
         }
     }
 
-    update( ) {
+    update() {
         if (!this.player || !this.cursors) {
             return;
         }
 
         this.player.update(this.cursors);
+
+        this.enemies?.getChildren().forEach((crossShipGameObject: Phaser.GameObjects.GameObject) => {
+            const crossShip = crossShipGameObject as CrossShip;
+            crossShip.update();
+        });
 
         this.cannonBalls?.getChildren().forEach((cannonBallGameObject: Phaser.GameObjects.GameObject) => {
             const cannonBall = cannonBallGameObject as CannonBall;

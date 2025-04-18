@@ -1,40 +1,37 @@
-import Phaser from "phaser";
-import { BaseShip } from "./BaseShip";
+import { BaseShip } from "../BaseShip";
 
-const HEALTH = 3;
+export interface EnemyPath {
+    x: number;
+    y: number;
+    angle: number;
+}
 
-const PATH = [
-    { x: 200, y: 75, angle: 90},
-    { x: 200, y: 400, angle: 0},
-    { x: 600, y: 400, angle: 270},
-    { x: 600, y: 75, angle: 180},
-];
-
-export class CrossShip extends BaseShip {
-    private health = HEALTH;
+export class BaseEnemyShip extends BaseShip {
+    private health: number;
+    private maxHealth: number;
     protected speed = 50;
     private currentPathIndex: number = 0;
+    private path: EnemyPath[];
 
-    constructor(scene: Phaser.Scene) {
-        super(scene, PATH[0].x, PATH[0].y, 'ship (1).png');
+    constructor(scene: Phaser.Scene, shipName: string, path: EnemyPath[], health: number) {
+        super(scene, path[0].x, path[0].y, shipName);
+        this.maxHealth = health;
+        this.health = health;
+        this.path = path;
         this.randomizeCurrentPathIndex();
-        const path = this.getCurrentPathTarget();
-        this.setPosition(path.x, path.y);
+        const position = this.getCurrentPathTarget();
+        this.setPosition(position.x, position.y);
         this.scale = 0.5;
         scene.add.existing(this);
         scene.physics.add.existing(this);
         this.setCollideWorldBounds(true);
     }
 
-    private getCurrentPathTarget () {
-        return PATH[this.currentPathIndex];
-    }
-
     update() {
         const target = this.getCurrentPathTarget();
         const distance = Phaser.Math.Distance.Between(this.x, this.y, target.x, target.y);
         if (distance < 5) { // Reached the current point (small tolerance)
-            this.currentPathIndex = (this.currentPathIndex + 1) % PATH.length;
+            this.currentPathIndex = (this.currentPathIndex + 1) % this.path.length;
             this.moveToNextPatrolPoint();
         } else {
             this.scene.physics.moveToObject(this, target, this.speed);
@@ -45,7 +42,7 @@ export class CrossShip extends BaseShip {
     }
 
     moveToNextPatrolPoint() {
-        const target = PATH[this.currentPathIndex];
+        const target = this.path[this.currentPathIndex];
         this.scene.physics.moveToObject(this, target, this.speed);
     }
 
@@ -61,7 +58,7 @@ export class CrossShip extends BaseShip {
     }
 
     public resetHealth() {
-        this.health = HEALTH;
+        this.health = this.maxHealth;
     }
 
     public die() {
@@ -83,6 +80,10 @@ export class CrossShip extends BaseShip {
     }
 
     private randomizeCurrentPathIndex = () => {
-        this.currentPathIndex = Math.floor(Math.random() * PATH.length)
+        this.currentPathIndex = Math.floor(Math.random() * this.path.length)
+    }
+
+    private getCurrentPathTarget () {
+        return this.path[this.currentPathIndex];
     }
 }

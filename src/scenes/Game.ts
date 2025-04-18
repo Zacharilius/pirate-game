@@ -1,7 +1,7 @@
 import { Scene } from 'phaser';
 import { CANNON_RADIAN_OFFSET, Player } from '../gameObjects/ships/Player';
 import { CannonBall } from '../gameObjects/CannonBall';
-import { CrossShip } from '../gameObjects/ships/CrossShip';
+import { CrossShip } from '../gameObjects/ships/enemies/CrossShip';
 
 // Each tile in the background tile sprite is 64 width and height.
 const BACKGROUND_DIMENSION_PIXELS = 64;

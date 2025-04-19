@@ -7,16 +7,15 @@ export interface EnemyPath {
 }
 
 export class BaseEnemyShip extends BaseShip {
-    private health: number;
-    private maxHealth: number;
     protected speed = 50;
     private currentPathIndex: number = 0;
     private path: EnemyPath[];
 
+    private lastCannonBallTime: number = 0;
+    private cannonBallDelay: number = 1000;
+
     constructor(scene: Phaser.Scene, shipName: string, path: EnemyPath[], health: number) {
-        super(scene, path[0].x, path[0].y, shipName);
-        this.maxHealth = health;
-        this.health = health;
+        super(scene, path[0].x, path[0].y, shipName, health);
         this.path = path;
         this.randomizeCurrentPathIndex();
         const position = this.getCurrentPathTarget();
@@ -27,7 +26,12 @@ export class BaseEnemyShip extends BaseShip {
         this.setCollideWorldBounds(true);
     }
 
-    update() {
+    public update(time: number) {
+        if (time > this.lastCannonBallTime + this.cannonBallDelay) {
+            this.fireCannonBall();
+            this.lastCannonBallTime = time;
+        }
+
         const target = this.getCurrentPathTarget();
         const distance = Phaser.Math.Distance.Between(this.x, this.y, target.x, target.y);
         if (distance < 5) { // Reached the current point (small tolerance)
@@ -41,32 +45,17 @@ export class BaseEnemyShip extends BaseShip {
         this.updateBoundingBox();
     }
 
-    moveToNextPatrolPoint() {
+    public moveToNextPatrolPoint() {
         const target = this.path[this.currentPathIndex];
         this.scene.physics.moveToObject(this, target, this.speed);
     }
 
-    public getHealth() {
-        return this.health;
-    }
-
-    public takeDamage(damage: number) {
-        this.health -= damage;
-        if (this.health <= 0) {
-            this.die();
-        }
+    public fireCannonBall() {
+        this.scene.events.emit('enemyFireCannonBall', this);
     }
 
     public resetHealth() {
         this.health = this.maxHealth;
-    }
-
-    public die() {
-        this.setActive(false)
-        this.setVisible(false);
-        this.setVelocity(0); // Stop its movement
-        this.setPosition(-100, -100); // Move it off-screen for reuse
-
     }
 
     public revive() {

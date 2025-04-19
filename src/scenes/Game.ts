@@ -2,6 +2,8 @@ import { Scene } from 'phaser';
 import { CANNON_RADIAN_OFFSET, Player } from '../gameObjects/ships/Player';
 import { CannonBall } from '../gameObjects/CannonBall';
 import { CrossShip } from '../gameObjects/ships/enemies/CrossShip';
+import { BaseEnemyShip } from '../gameObjects/ships/enemies/BaseEnemyShip';
+import { BaseShip } from '../gameObjects/ships/BaseShip';
 
 // Each tile in the background tile sprite is 64 width and height.
 const BACKGROUND_DIMENSION_PIXELS = 64;
@@ -79,27 +81,47 @@ export class Game extends Scene {
 
         // Cannonball
         this.cannonBalls = this.physics.add.group();
-        this.physics.add.collider(this.cannonBalls, this.enemies, this.handleEnemyHit as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback, undefined, this);
+        this.physics.add.collider(this.cannonBalls, this.enemies, this.handleCannonBallHit as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback, undefined, this);
+        this.physics.add.collider(this.cannonBalls, this.player, this.handleCannonBallHitPlayer as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback, undefined, this);
+
+        // FIXME: shoot uses player rotation, but enemies use angle.
+        this.events.on('enemyFireCannonBall', (enemy: BaseEnemyShip) => {
+            const rotation = enemy.angle * Math.PI / 180;
+            this.shoot(rotation, enemy.x, enemy.y);
+        });
+
+        this.events.on('playerDied', () => {
+            this.physics.pause();
+
+            this.time.delayedCall(2000, () => {
+                this.scene.start('GameOver');
+            });
+        });
     }
 
-    private handleEnemyHit(cannonBall: CannonBall, enemy: CrossShip) {
+    // The order of the paramaters is switched when using enemies vs plauer so
+    // this is a hack to get handleCannonballHit to work for both.
+    private handleCannonBallHitPlayer(player: Player, cannonBall: CannonBall) {
+        return this.handleCannonBallHit(cannonBall, player);
+    }
+
+    private handleCannonBallHit(cannonBall: CannonBall, ship: BaseShip) {
         // takeDamage moves the enemy off screen so store original hit position to place the explosion correctly.
-        const enemyX = enemy.x;
-        const enemyY = enemy.y;
-        enemy.takeDamage(cannonBall.getDamage());
-        if (enemy.getHealth() <= 0) {
+        const x = ship.x;
+        const y = ship.y;
+        ship.takeDamage(cannonBall.getDamage());
+        if (ship.getHealth() <= 0) {
+            ship.destroy();
             // Show fire for 1 second.
-            const tempSprite = this.add.sprite(enemyX, enemyY,  'shipSheet', 'explosion3.png');
+            const tempSprite = this.add.sprite(x, y,  'shipSheet', 'explosion3.png');
             this.time.delayedCall(1000, () => {
                 tempSprite.destroy();
-                const firstEnemy: CrossShip = this.enemies?.getFirst();
-                firstEnemy?.revive();
             });
         } else {
-            enemy.setTint(0xff0000);
+            ship.setTint(0xff0000);
             this.time.delayedCall(1000, () => {
-                if (enemy.getHealth() > 0) {
-                    enemy.setTint();
+                if (ship.getHealth() > 0) {
+                    ship.setTint();
                 }
             });
 
@@ -110,19 +132,19 @@ export class Game extends Scene {
     update(time: number) {
         if (time > this.lastCannonBallTime + this.cannonBallDelay) {
             if (this.inputA?.isDown) {
-                this.shootPort();
+                this.shootPort(this.player.x as number, this.player.y as number);
                 this.lastCannonBallTime = time;
             } else if (this.inputD?.isDown) {
-                this.shootStarboard();
+                this.shootStarboard(this.player.x as number, this.player.y as number);
                 this.lastCannonBallTime = time;
             }
         }
 
         this.player?.update(this.cursors as Phaser.Types.Input.Keyboard.CursorKeys);
 
-        this.enemies?.getChildren().forEach((crossShipGameObject: Phaser.GameObjects.GameObject) => {
-            const crossShip = crossShipGameObject as CrossShip;
-            crossShip.update();
+        this.enemies?.getChildren().forEach((baseEnemyShipGameObject: Phaser.GameObjects.GameObject) => {
+            const baseEnemyShip = baseEnemyShipGameObject as BaseEnemyShip;
+            baseEnemyShip.update(time);
         });
 
         this.cannonBalls?.getChildren().forEach((cannonBallGameObject: Phaser.GameObjects.GameObject) => {
@@ -131,28 +153,27 @@ export class Game extends Scene {
         });
     }
 
-
-    private shootPort() {
+    private shootPort(x: number, y: number) {
         const rotationOffset = CANNON_RADIAN_OFFSET;
         const rotation = this.player?.rotation as number;
-        this.shoot(rotation + rotationOffset);
+        this.shoot(rotation + rotationOffset, x, y);
     }
 
-    private shootStarboard() {
+    private shootStarboard(x: number, y: number) {
         const rotationOffset = -CANNON_RADIAN_OFFSET + Math.PI;
         const rotation = this.player?.rotation as number
-        this.shoot(rotation + rotationOffset);
+        this.shoot(rotation + rotationOffset, x, y);
     }
 
-   private shoot(rotation: number) {
+   private shoot(rotation: number, x: number, y: number) {
         let cannonBall: CannonBall = this.cannonBalls?.getFirst();
         if (cannonBall) {
             // Reuse the cannonball if available.
             cannonBall.setActive(true).setVisible(true);
-            cannonBall.setPosition(this.player?.x as number, this.player?.y as number);
+            cannonBall.setPosition(x, y);
             cannonBall.init(rotation);
         } else {
-            cannonBall = new CannonBall(this, this.player?.x as number, this.player?.y as number);
+            cannonBall = new CannonBall(this, x, y);
             this.cannonBalls?.add(cannonBall);
             // When a sprite is added to a group, it sets the velocity to 0. So
             // initalize after added to the group.

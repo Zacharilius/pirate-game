@@ -12,6 +12,13 @@ export class Player extends BaseShip {
         this.setCollideWorldBounds(true);
     }
 
+    public die() {
+        this.setActive(false)
+        this.setVisible(false);
+        this.setVelocity(0); // Stop its movement
+        this.scene.events.emit('playerDied');
+    }
+
     public update(cursors: Phaser.Types.Input.Keyboard.CursorKeys) {
         this.setVelocity(0);
 

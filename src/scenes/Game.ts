@@ -117,6 +117,14 @@ export class Game extends Scene {
             this.time.delayedCall(1000, () => {
                 tempSprite.destroy();
             });
+
+            const allEnemyShipsAreDead = this.enemies?.getChildren().length === 0
+            if (allEnemyShipsAreDead) {
+                this.physics.pause();
+                this.time.delayedCall(2000, () => {
+                    this.scene.start('Winner');
+                });
+            }
         } else {
             ship.setTint(0xff0000);
             this.time.delayedCall(1000, () => {
@@ -130,12 +138,13 @@ export class Game extends Scene {
     };
 
     update(time: number) {
+        const player = this.player as Player;
         if (time > this.lastCannonBallTime + this.cannonBallDelay) {
             if (this.inputA?.isDown) {
-                this.shootPort(this.player.x as number, this.player.y as number);
+                this.shootPort(player.x as number, player.y as number);
                 this.lastCannonBallTime = time;
             } else if (this.inputD?.isDown) {
-                this.shootStarboard(this.player.x as number, this.player.y as number);
+                this.shootStarboard(player.x as number, player.y as number);
                 this.lastCannonBallTime = time;
             }
         }

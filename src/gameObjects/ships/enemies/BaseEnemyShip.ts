@@ -14,6 +14,8 @@ export class BaseEnemyShip extends BaseShip {
     private lastCannonBallTime: number = 0;
     private cannonBallDelay: number = 1000;
 
+    private updateCallCount = 0;
+
     constructor(scene: Phaser.Scene, shipName: string, path: EnemyPath[], health: number) {
         super(scene, path[0].x, path[0].y, shipName, health);
         this.path = path;
@@ -27,7 +29,12 @@ export class BaseEnemyShip extends BaseShip {
     }
 
     public update(time: number) {
-        if (time > this.lastCannonBallTime + this.cannonBallDelay) {
+        if (!this.active) {
+            return;
+        }
+
+        if (!this.isFirstCall() && time > this.lastCannonBallTime + this.cannonBallDelay) {
+            console.log('fireCannonBall');
             this.fireCannonBall();
             this.lastCannonBallTime = time;
         }
@@ -43,6 +50,18 @@ export class BaseEnemyShip extends BaseShip {
         this.setAngle(target.angle);
 
         this.updateBoundingBox();
+    }
+
+    // On init, there's a race condition where the cannon fires but the update to move the 
+    // ship hasn't called causing the enemy ships to take damage.
+    private isFirstCall() {
+        const CALLS_TO_DELAY = 1;
+        if (this.updateCallCount > CALLS_TO_DELAY) {
+            return false
+        } else {
+            this.updateCallCount += 1;
+            return true;
+        }
     }
 
     public moveToNextPatrolPoint() {

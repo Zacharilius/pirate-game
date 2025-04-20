@@ -4,6 +4,7 @@ import { CannonBall } from '../gameObjects/CannonBall';
 import { CrossShip } from '../gameObjects/ships/enemies/CrossShip';
 import { BaseEnemyShip } from '../gameObjects/ships/enemies/BaseEnemyShip';
 import { BaseShip } from '../gameObjects/ships/BaseShip';
+import { SwordsEnemyShip } from '../gameObjects/ships/enemies/SwordsShip';
 
 // Each tile in the background tile sprite is 64 width and height.
 const BACKGROUND_DIMENSION_PIXELS = 64;
@@ -65,8 +66,8 @@ export class Game extends Scene {
         this.enemies = this.physics.add.group();
         this.physics.add.collider(this.enemies, this.backgroundTileGroup as Phaser.Physics.Arcade.StaticGroup);
         this.physics.add.collider(this.enemies, this.player);
-        const enemyCrossShip = new CrossShip(this);
-        this.enemies?.add(enemyCrossShip);
+        this.enemies?.add(new CrossShip(this));
+        this.enemies?.add(new SwordsEnemyShip(this));
 
         // Camera setup
         this.mainCamera = this.cameras.main;
@@ -84,7 +85,6 @@ export class Game extends Scene {
         this.physics.add.collider(this.cannonBalls, this.enemies, this.handleCannonBallHit as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback, undefined, this);
         this.physics.add.collider(this.cannonBalls, this.player, this.handleCannonBallHitPlayer as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback, undefined, this);
 
-        // FIXME: shoot uses player rotation, but enemies use angle.
         this.events.on('enemyFireCannonBall', (enemy: BaseEnemyShip) => {
             const rotation = enemy.angle * Math.PI / 180;
             this.shoot(rotation, enemy.x, enemy.y);
@@ -109,16 +109,17 @@ export class Game extends Scene {
         // takeDamage moves the enemy off screen so store original hit position to place the explosion correctly.
         const x = ship.x;
         const y = ship.y;
+        // Move offscreen so it is not visible.
+        cannonBall.setPosition(-200, -200);
         ship.takeDamage(cannonBall.getDamage());
         if (ship.getHealth() <= 0) {
-            ship.destroy();
             // Show fire for 1 second.
             const tempSprite = this.add.sprite(x, y,  'shipSheet', 'explosion3.png');
             this.time.delayedCall(1000, () => {
                 tempSprite.destroy();
             });
 
-            const allEnemyShipsAreDead = this.enemies?.getChildren().length === 0
+            const allEnemyShipsAreDead = this.enemies?.getChildren().filter(enemy => enemy.active).length === 0
             if (allEnemyShipsAreDead) {
                 this.physics.pause();
                 this.time.delayedCall(2000, () => {

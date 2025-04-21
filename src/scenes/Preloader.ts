@@ -30,8 +30,12 @@ export class Preloader extends Scene {
             { frameWidth: 64, frameHeight: 64 }
         );
 
-        // Load the assets
+        // Load the Ship Sprite sheet
         this.load.atlasXML('shipSheet', 'shipsMiscellaneous_sheet.png', 'shipsMiscellaneous_sheet.xml');
+
+        // Audio
+        this.load.audio('cannonFire', 'audio/cannon-fire-161072.mp3');
+        this.load.audio('shipSinkSound', 'audio/wooden-ship-break-85277.mp3');
     }
 
     create () {

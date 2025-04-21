@@ -1,4 +1,6 @@
+import { CANNON_BALL_RANGE } from "../../CannonBall";
 import { BaseShip } from "../BaseShip";
+import { getTargetPosition } from "./type";
 
 export interface EnemyPath {
     x: number;
@@ -16,13 +18,18 @@ export class BaseEnemyShip extends BaseShip {
 
     private updateCallCount = 0;
 
-    constructor(scene: Phaser.Scene, shipName: string, path: EnemyPath[], health: number) {
+    private getTargetPosition: getTargetPosition;
+
+    constructor(scene: Phaser.Scene, shipName: string, path: EnemyPath[], health: number, getPosition: getTargetPosition) {
         super(scene, path[0].x, path[0].y, shipName, health);
         this.path = path;
         this.randomizeCurrentPathIndex();
         const position = this.getCurrentPathTarget();
         this.setPosition(position.x, position.y);
         this.scale = 0.5;
+
+        this.getTargetPosition = getPosition;
+
         scene.add.existing(this);
         scene.physics.add.existing(this);
         this.setCollideWorldBounds(true);
@@ -33,8 +40,11 @@ export class BaseEnemyShip extends BaseShip {
             return;
         }
 
-        if (!this.isFirstCall() && time > this.lastCannonBallTime + this.cannonBallDelay) {
-            console.log('fireCannonBall');
+        if (
+            !this.isFirstCall() &&
+            time > this.lastCannonBallTime + this.cannonBallDelay &&
+            this.isTargetInRange()
+        ) {
             this.fireCannonBall();
             this.lastCannonBallTime = time;
         }
@@ -62,6 +72,13 @@ export class BaseEnemyShip extends BaseShip {
             this.updateCallCount += 1;
             return true;
         }
+    }
+
+    private isTargetInRange(): boolean {
+        const targetPosition = this.getTargetPosition()
+        const distance = Phaser.Math.Distance.Between(targetPosition.x, targetPosition.y, this.x, this.y);
+        const inRange = distance < CANNON_BALL_RANGE
+        return inRange;
     }
 
     public moveToNextPatrolPoint() {

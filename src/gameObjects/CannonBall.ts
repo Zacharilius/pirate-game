@@ -1,9 +1,13 @@
 import Phaser from "phaser";
 
+export const CANNON_BALL_RANGE = 150;
+
 export class CannonBall extends Phaser.Physics.Arcade.Sprite {
     private cannonBallSpeed = 200;
-    private cannonBallRange = 150;
+    private cannonBallRange = CANNON_BALL_RANGE;
     private damage = 1;
+    private cannonFireSound: Phaser.Sound.NoAudioSound | Phaser.Sound.HTML5AudioSound | Phaser.Sound.WebAudioSound | undefined;
+
 
     constructor(scene: Phaser.Scene, x: number, y: number) {
         super(scene, x, y, 'shipSheet', 'cannonBall.png');
@@ -11,12 +15,15 @@ export class CannonBall extends Phaser.Physics.Arcade.Sprite {
         scene.physics.add.existing(this);
         this.setCollideWorldBounds(false);
 
+        // Audio
+        this.cannonFireSound = this.scene.sound.add('cannonFire', { volume: 0.2 });
     }
     public init(angle: number) {
         this.setVelocityX(Math.cos(angle) * this.cannonBallSpeed);
         this.setVelocityY(Math.sin(angle) * this.cannonBallSpeed);
         this.setData('startX', this.x);
         this.setData('startY', this.y);
+        this.cannonFireSound?.play();
     }
 
     public getDamage() {

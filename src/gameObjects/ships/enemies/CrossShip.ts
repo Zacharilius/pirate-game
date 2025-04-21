@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { BaseEnemyShip, EnemyPath } from "./BaseEnemyShip";
+import { getTargetPosition } from "./type";
 
 const HEALTH = 3;
 
@@ -11,7 +12,7 @@ const CROSS_SHIP_PATH: EnemyPath[] = [
 ];
 
 export class CrossShip extends BaseEnemyShip {
-    constructor(scene: Phaser.Scene) {
-        super(scene, 'ship (3).png', CROSS_SHIP_PATH, HEALTH);
+    constructor(scene: Phaser.Scene, getPosition: getTargetPosition) {
+        super(scene, 'ship (3).png', CROSS_SHIP_PATH, HEALTH, getPosition);
     }
 }

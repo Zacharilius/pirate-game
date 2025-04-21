@@ -5,6 +5,7 @@ import { CrossShip } from '../gameObjects/ships/enemies/CrossShip';
 import { BaseEnemyShip } from '../gameObjects/ships/enemies/BaseEnemyShip';
 import { BaseShip } from '../gameObjects/ships/BaseShip';
 import { SwordsEnemyShip } from '../gameObjects/ships/enemies/SwordsShip';
+import { HorseShip } from '../gameObjects/ships/enemies/HorseShip';
 
 // Each tile in the background tile sprite is 64 width and height.
 const BACKGROUND_DIMENSION_PIXELS = 64;
@@ -42,6 +43,8 @@ export class Game extends Scene {
     private lastCannonBallTime: number = 0;
     private cannonBallDelay: number = 1000;
 
+    private shipSinkSound: Phaser.Sound.NoAudioSound | Phaser.Sound.HTML5AudioSound | Phaser.Sound.WebAudioSound | undefined;
+
     private backgroundTileGroup: Phaser.Physics.Arcade.StaticGroup | undefined;
 
     constructor () {
@@ -58,6 +61,9 @@ export class Game extends Scene {
         // Background
         this.setupBackground();
 
+        // Audio
+        this.shipSinkSound = this.sound.add('shipSinkSound');
+
         // Player
         this.player = new Player(this, 25, 25);
         this.physics.add.collider(this.player, this.backgroundTileGroup as Phaser.Physics.Arcade.StaticGroup);
@@ -66,8 +72,10 @@ export class Game extends Scene {
         this.enemies = this.physics.add.group();
         this.physics.add.collider(this.enemies, this.backgroundTileGroup as Phaser.Physics.Arcade.StaticGroup);
         this.physics.add.collider(this.enemies, this.player);
-        this.enemies?.add(new CrossShip(this));
-        this.enemies?.add(new SwordsEnemyShip(this));
+        const getPlayerPosition = () => { return this.getPlayerPosition() };
+        this.enemies.add(new CrossShip(this, getPlayerPosition));
+        this.enemies.add(new SwordsEnemyShip(this, getPlayerPosition));
+        this.enemies.add(new HorseShip(this, getPlayerPosition));
 
         // Camera setup
         this.mainCamera = this.cameras.main;
@@ -99,6 +107,13 @@ export class Game extends Scene {
         });
     }
 
+    private getPlayerPosition (): Position {
+        return {
+            x: this.player?.x ?? 0,
+            y: this.player?.y ?? 0,
+        }
+    }
+
     // The order of the paramaters is switched when using enemies vs plauer so
     // this is a hack to get handleCannonballHit to work for both.
     private handleCannonBallHitPlayer(player: Player, cannonBall: CannonBall) {
@@ -113,9 +128,16 @@ export class Game extends Scene {
         cannonBall.setPosition(-200, -200);
         ship.takeDamage(cannonBall.getDamage());
         if (ship.getHealth() <= 0) {
+            if (!this.shipSinkSound.isPlaying) {
+                this.shipSinkSound.play();
+            }
+
+            ship.destroy();
+
             // Show fire for 1 second.
             const tempSprite = this.add.sprite(x, y,  'shipSheet', 'explosion3.png');
-            this.time.delayedCall(1000, () => {
+            // Sound length matches approximate length of sinking sound.
+            this.time.delayedCall(2000, () => {
                 tempSprite.destroy();
             });
 

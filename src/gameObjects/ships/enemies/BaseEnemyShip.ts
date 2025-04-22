@@ -20,6 +20,8 @@ export class BaseEnemyShip extends BaseShip {
 
     private getTargetPosition: getTargetPosition;
 
+    private moveToObjectThrottleId: Phaser.Time.TimerEvent | undefined;
+
     constructor(scene: Phaser.Scene, shipName: string, path: EnemyPath[], health: number, getPosition: getTargetPosition) {
         super(scene, path[0].x, path[0].y, shipName, health);
         this.path = path;
@@ -55,11 +57,20 @@ export class BaseEnemyShip extends BaseShip {
             this.currentPathIndex = (this.currentPathIndex + 1) % this.path.length;
             this.moveToNextPatrolPoint();
         } else {
-            this.scene.physics.moveToObject(this, target, this.speed);
+            // Throttle calls every second.
+            if (!this.moveToObjectThrottleId) {
+                this.scene.physics.moveToObject(this, target, this.speed);
+                this.moveToObjectThrottleId = this.scene.time.delayedCall(1000, () => {
+                    this.moveToObjectThrottleId = undefined;
+                });
+            }
         }
-        this.setAngle(target.angle);
 
-        this.updateBoundingBox();
+        // Rotate enemy sprite if the new route caused the ship to turn.
+        if (this.angle != target.angle) {
+            this.setAngle(target.angle);
+            this.updateBoundingBox();
+        }
     }
 
     // On init, there's a race condition where the cannon fires but the update to move the 

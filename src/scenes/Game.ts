@@ -6,6 +6,7 @@ import { BaseEnemyShip } from '../gameObjects/ships/enemies/BaseEnemyShip';
 import { BaseShip } from '../gameObjects/ships/BaseShip';
 import { SwordsEnemyShip } from '../gameObjects/ships/enemies/SwordsShip';
 import { HorseShip } from '../gameObjects/ships/enemies/HorseShip';
+import { Position } from '../gameObjects/ships/enemies/type';
 
 // Each tile in the background tile sprite is 64 width and height.
 const BACKGROUND_DIMENSION_PIXELS = 64;
@@ -24,9 +25,9 @@ const tiles = [
     [-1, -1, -1, -1, -1, 21, 22, 23, 23, 24, -1, -1, -1, -1, -1, -1, -1, -1],
     [-1, -1, -1, -1, -1, 37, 38, 39, 39, 40, -1, -1, -1, -1, -1, -1, -1, -1],
     [-1, -1, -1, -1, -1, 37, 38, 39, 39, 40, -1, -1, -1, -1, -1, -1, -1, -1],
-    [-1, -1, -1, -1, -1, 53, 54, 55, 55, 56, -1, -1, -1, -1, -1, -1, -1, -1],
-    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
-    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+    [-1, -1, -1, -1, -1, 53, 54, 55, 55, 56, -1, -1, -1, -1,  0,  1,  2, -1],
+    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 16, 17, 18, -1],
+    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 32, 33, 34, -1],
     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
 ]
 
@@ -42,6 +43,8 @@ export class Game extends Scene {
     private cannonBalls: Phaser.Physics.Arcade.Group | undefined;
     private lastCannonBallTime: number = 0;
     private cannonBallDelay: number = 1000;
+
+    private lastHandShipCollisionTime = 0;
 
     private shipSinkSound: Phaser.Sound.NoAudioSound | Phaser.Sound.HTML5AudioSound | Phaser.Sound.WebAudioSound | undefined;
 
@@ -93,6 +96,10 @@ export class Game extends Scene {
         this.physics.add.collider(this.cannonBalls, this.enemies, this.handleCannonBallHit as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback, undefined, this);
         this.physics.add.collider(this.cannonBalls, this.player, this.handleCannonBallHitPlayer as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback, undefined, this);
 
+        // Ship colliding
+        this.physics.add.collider(this.player, this.enemies, this.handleShipCollision as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback, undefined, this);
+        this.physics.add.collider(this.enemies, this.player, this.handleShipCollision as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback, undefined, this);
+
         this.events.on('enemyFireCannonBall', (enemy: BaseEnemyShip) => {
             const rotation = enemy.angle * Math.PI / 180;
             this.shoot(rotation, enemy.x, enemy.y);
@@ -128,11 +135,15 @@ export class Game extends Scene {
         cannonBall.setPosition(-200, -200);
         ship.takeDamage(cannonBall.getDamage());
         if (ship.getHealth() <= 0) {
-            if (!this.shipSinkSound.isPlaying) {
-                this.shipSinkSound.play();
+            if (!this.shipSinkSound?.isPlaying) {
+                this.shipSinkSound?.play();
             }
 
-            ship.destroy();
+            // TODO: Cannot destroy the player ship because there is a race condition
+            // where update is called after it is destroyed.
+            if (ship !== this.player) {
+                ship.destroy();
+            }
 
             // Show fire for 1 second.
             const tempSprite = this.add.sprite(x, y,  'shipSheet', 'explosion3.png');
@@ -159,6 +170,24 @@ export class Game extends Scene {
         }
         cannonBall.setInactive();
     };
+
+    private handleShipCollision(shipA: BaseShip, shipB: BaseShip) {
+        // Throttle calls every 5 seconds so hitting doesn't fire for 3 consecutive frames.
+        const throttleTime = 5000;
+        if (this.lastHandShipCollisionTime + throttleTime < this.time.now) {
+            const COLLISION_DAMAGE = 1;
+            [shipA, shipB].forEach((ship: BaseShip) => {
+                ship.setTint(0xff0000);
+                ship.takeDamage(COLLISION_DAMAGE);
+                this.time.delayedCall(1000, () => {
+                    if (ship.getHealth() > 0) {
+                        ship.setTint();
+                    }
+                });
+            });
+            this.lastHandShipCollisionTime = this.time.now;
+        }
+    }
 
     update(time: number) {
         const player = this.player as Player;
